@@ -6,6 +6,8 @@
     <title>Document</title>
 </head>
 <body>
+  <h1>People 輸出 :</h1>
+  <div id="output"></div>
     <script>
 let person1 = {
   name: '王小明', 
@@ -26,6 +28,16 @@ let person3 = {
 };
 
 let people = [person1, person2, person3];
+let outputDiv = document.getElementById('output');
+
+for (let i = 0; i < people.length; i++) {
+    outputDiv.innerHTML += `
+    <p>姓名: ${people[i].name}</p>
+    <p>年齡: ${people[i].age}</p>
+    <p>電話: ${people[i].phone}</p>
+    <hr>
+    `;
+}
 
 for (let i = 0; i < people.length; i++) {
   console.log(people[i].name, people[i].age, people[i].phone);
