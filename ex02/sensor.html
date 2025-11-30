@@ -79,31 +79,39 @@ const latEl = document.getElementById("lat");
 const lngEl = document.getElementById("lng");
 const altEl = document.getElementById("alt");
 
-
-// ========= 請求感測器權限（加速度、陀螺儀、GPS） =========
+// ========= Permissions API（可有可無） =========
 function requestSensorPermissions() {
-    return new Promise((resolve) => {
-        if (!navigator.permissions) {
-            console.log("Permissions API 不支援，略過權限檢查");
-            resolve();
-            return;
-        }
+    return Promise.resolve();
+}
 
-        Promise.all([
-            navigator.permissions.query({ name: "accelerometer" }).catch(() => {}),
-            navigator.permissions.query({ name: "gyroscope" }).catch(() => {}),
-            navigator.permissions.query({ name: "geolocation" }).catch(() => {})
-        ])
-        .then(() => resolve())
-        .catch((err) => {
-            console.log("權限請求錯誤：", err);
-            resolve(); // 不阻斷流程
-        });
+// ========= iOS / Chrome 必須的權限 =========
+function requestOrientationPermission() {
+    return new Promise((resolve, reject) => {
+        if (typeof DeviceOrientationEvent?.requestPermission === "function") {
+            DeviceOrientationEvent.requestPermission().then(res => {
+                if (res === "granted") resolve();
+                else reject("未允許方向感測器");
+            });
+        } else {
+            resolve();
+        }
     });
 }
 
+function requestMotionPermission() {
+    return new Promise((resolve, reject) => {
+        if (typeof DeviceMotionEvent?.requestPermission === "function") {
+            DeviceMotionEvent.requestPermission().then(res => {
+                if (res === "granted") resolve();
+                else reject("未允許加速度感測器");
+            });
+        } else {
+            resolve();
+        }
+    });
+}
 
-// ========= 取得 GPS（緯度 / 經度 / 海拔） =========
+// ========= GPS =========
 function getGeoLocation() {
     return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
@@ -112,7 +120,7 @@ function getGeoLocation() {
         }
 
         navigator.geolocation.getCurrentPosition(
-            (pos) => {
+            pos => {
                 const c = pos.coords;
                 resolve({
                     latitude: c.latitude,
@@ -120,38 +128,34 @@ function getGeoLocation() {
                     altitude: c.altitude ?? "未知"
                 });
             },
-            (err) => reject("定位失敗：" + err.message),
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            err => reject("定位失敗：" + err.message),
+            { enableHighAccuracy: true }
         );
     });
 }
 
-
-// ========================== 主流程（按下按鈕） ==========================
+// ========= 主流程 =========
 btn.addEventListener("click", () => {
 
-    if (!window.DeviceMotionEvent && !window.DeviceOrientationEvent) {
-        alert("此裝置不支援 Motion/Orientation 感測器");
-        return;
-    }
-
-    requestSensorPermissions()
-    .then(() => getGeoLocation())
-    .then((geo) => {
+    Promise.all([
+        requestSensorPermissions(),
+        requestOrientationPermission(),
+        requestMotionPermission(),
+        getGeoLocation()
+    ])
+    .then(([_, __, ___, geo]) => {
         latEl.textContent = geo.latitude;
         lngEl.textContent = geo.longitude;
         altEl.textContent = geo.altitude;
-    })
-    .then(() => {
 
-        // ===== Orientation =====
+        // ===== Orientation Listener =====
         window.addEventListener("deviceorientation", (event) => {
             alphaEl.textContent = event.alpha?.toFixed(2) ?? "-";
             betaEl.textContent  = event.beta?.toFixed(2) ?? "-";
             gammaEl.textContent = event.gamma?.toFixed(2) ?? "-";
         });
 
-        // ===== Motion =====
+        // ===== Motion Listener =====
         window.addEventListener("devicemotion", (event) => {
             const acc = event.acceleration || {};
             axEl.textContent = acc.x?.toFixed(2) ?? "-";
@@ -172,12 +176,10 @@ btn.addEventListener("click", () => {
         btn.disabled = true;
         btn.textContent = "已啟動（感測器 + GPS）";
     })
-    .catch((err) => {
+    .catch(err => {
         alert("錯誤：" + err);
     });
-
 });
 </script>
-
 </body>
 </html>
