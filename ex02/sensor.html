@@ -65,63 +65,81 @@ const rBetaEl  = document.getElementById("rBeta");
 const rGammaEl = document.getElementById("rGamma");
 
 // ======== EVENT ========
-btn.addEventListener("click", async () => {
-    try {
-        if (!window.DeviceMotionEvent && !window.DeviceOrientationEvent) {
-            alert("此裝置不支援 Motion/Orientation 感測器");
-            return;
-        }
+btn.addEventListener("click", () => {
 
-        // Orientation 授權
-        if (typeof DeviceOrientationEvent?.requestPermission === "function") {
-            const r1 = await DeviceOrientationEvent.requestPermission();
-            if (r1 !== "granted") {
-                alert("未允許讀取 DeviceOrientation");
-                return;
-            }
-        }
-
-        // Motion 授權
-        if (typeof DeviceMotionEvent?.requestPermission === "function") {
-            const r2 = await DeviceMotionEvent.requestPermission();
-            if (r2 !== "granted") {
-                alert("未允許讀取 DeviceMotion");
-                return;
-            }
-        }
-
-        // Orientation Listener
-        window.addEventListener("deviceorientation", (event) => {
-            alphaEl.textContent = event.alpha?.toFixed(2) ?? "-";
-            betaEl.textContent  = event.beta?.toFixed(2) ?? "-";
-            gammaEl.textContent = event.gamma?.toFixed(2) ?? "-";
-        });
-
-        // Motion Listener
-        window.addEventListener("devicemotion", (event) => {
-            const acc = event.acceleration || {};
-            axEl.textContent = acc.x?.toFixed(2) ?? "-";
-            ayEl.textContent = acc.y?.toFixed(2) ?? "-";
-            azEl.textContent = acc.z?.toFixed(2) ?? "-";
-
-            const accG = event.accelerationIncludingGravity || {};
-            axgEl.textContent = accG.x?.toFixed(2) ?? "-";
-            aygEl.textContent = accG.y?.toFixed(2) ?? "-";
-            azgEl.textContent = accG.z?.toFixed(2) ?? "-";
-
-            const rot = event.rotationRate || {};
-            rAlphaEl.textContent = rot.alpha?.toFixed(2) ?? "-";
-            rBetaEl.textContent  = rot.beta?.toFixed(2) ?? "-";
-            rGammaEl.textContent = rot.gamma?.toFixed(2) ?? "-";
-        });
-
-        btn.disabled = true;
-        btn.textContent = "感測器已啟動";
-
-    } catch (err) {
-        alert("錯誤：" + err);
+    // 檢查支援度
+    if (!window.DeviceMotionEvent && !window.DeviceOrientationEvent) {
+        alert("此裝置不支援 Motion/Orientation 感測器");
+        return;
     }
+
+    // 取得 Orientation 授權
+    const orientationPromise = new Promise((resolve, reject) => {
+        if (typeof DeviceOrientationEvent?.requestPermission === "function") {
+            DeviceOrientationEvent.requestPermission()
+                .then(res => {
+                    if (res === "granted") resolve();
+                    else reject("未允許讀取 DeviceOrientation");
+                })
+                .catch(err => reject(err));
+        } else {
+            resolve(); // 不需要授權
+        }
+    });
+
+    // 取得 Motion 授權
+    const motionPromise = new Promise((resolve, reject) => {
+        if (typeof DeviceMotionEvent?.requestPermission === "function") {
+            DeviceMotionEvent.requestPermission()
+                .then(res => {
+                    if (res === "granted") resolve();
+                    else reject("未允許讀取 DeviceMotion");
+                })
+                .catch(err => reject(err));
+        } else {
+            resolve(); // 不需要授權
+        }
+    });
+
+    // 執行流程
+    Promise.all([orientationPromise, motionPromise])
+        .then(() => {
+            // ======== Orientation Listener ========
+            window.addEventListener("deviceorientation", (event) => {
+                alphaEl.textContent = event.alpha?.toFixed(2) ?? "-";
+                betaEl.textContent  = event.beta?.toFixed(2) ?? "-";
+                gammaEl.textContent = event.gamma?.toFixed(2) ?? "-";
+            });
+
+            // ======== Motion Listener ========
+            window.addEventListener("devicemotion", (event) => {
+                const acc = event.acceleration || {};
+                axEl.textContent = acc.x?.toFixed(2) ?? "-";
+                ayEl.textContent = acc.y?.toFixed(2) ?? "-";
+                azEl.textContent = acc.z?.toFixed(2) ?? "-";
+
+                const accG = event.accelerationIncludingGravity || {};
+                axgEl.textContent = accG.x?.toFixed(2) ?? "-";
+                aygEl.textContent = accG.y?.toFixed(2) ?? "-";
+                azgEl.textContent = accG.z?.toFixed(2) ?? "-";
+
+                const rot = event.rotationRate || {};
+                rAlphaEl.textContent = rot.alpha?.toFixed(2) ?? "-";
+                rBetaEl.textContent  = rot.beta?.toFixed(2) ?? "-";
+                rGammaEl.textContent = rot.gamma?.toFixed(2) ?? "-";
+            });
+
+            // 更新按鈕狀態
+            btn.disabled = true;
+            btn.textContent = "感測器已啟動";
+        })
+
+        // 任何授權錯誤都會進到這邊
+        .catch(err => {
+            alert("錯誤：" + err);
+        });
 });
+
 </script>
 
 </body>
