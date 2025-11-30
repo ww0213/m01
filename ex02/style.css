@@ -1,0 +1,85 @@
+:root {
+    --bg: #f4f6f9;
+    --card-bg: #fff;
+    --primary: #4a90e2;
+    --text-dark: #333;
+    --text-light: #666;
+    --radius: 12px;
+    --shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+body {
+    font-family: "Segoe UI", "Noto Sans TC", sans-serif;
+    background: var(--bg);
+    padding: 30px 20px;
+    color: var(--text-dark);
+    line-height: 1.7;
+    max-width: 780px;
+    margin: auto;
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+button {
+    display: block;
+    width: 100%;
+    max-width: 280px;
+    margin: 0 auto 25px;
+    padding: 14px 20px;
+    font-size: 1.15rem;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: 0.25s ease;
+    box-shadow: 0 4px 10px rgba(74,144,226,0.3);
+}
+
+button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(74,144,226,0.4);
+}
+
+button:disabled {
+    background: #8ab7ea;
+    cursor: default;
+    box-shadow: none;
+}
+
+/* Card layout */
+.card {
+    background: var(--card-bg);
+    padding: 20px 25px;
+    border-radius: var(--radius);
+    margin-bottom: 22px;
+    box-shadow: var(--shadow);
+}
+
+h3 {
+    margin-top: 0;
+    font-size: 1.2rem;
+    border-left: 5px solid var(--primary);
+    padding-left: 10px;
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.val-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.val-title {
+    color: var(--text-light);
+}
+
+.val {
+    font-weight: bold;
+}
