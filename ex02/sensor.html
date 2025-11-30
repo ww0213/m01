@@ -3,73 +3,76 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" href="style.css">
 <title>Orientation + Motion Demo</title>
-<style>
-    body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.8; }
-    button { padding: 10px 18px; font-size: 1.2rem; }
-    h3 { margin-top: 30px; }
-    .val { font-size: 1.1rem; }
-</style>
 </head>
+
 <body>
 
-<h2>DeviceOrientation + DeviceMotion 整合示範</h2>
-<p>請按下按鈕授權後，旋轉手機與搖一搖。</p>
+<h2>📱 DeviceOrientation + DeviceMotion 示範</h2>
+<p style="text-align:center; color:#555; margin-bottom:25px;">
+    請按下授權按鈕後，旋轉或搖動手機。
+</p>
 
 <button id="btn">取得感測器授權並開始</button>
 
-<h3>DeviceOrientation (方向角度)</h3>
-<p class="val">Alpha (Z)：<span id="alpha">-</span></p>
-<p class="val">Beta (X)：<span id="beta">-</span></p>
-<p class="val">Gamma (Y)：<span id="gamma">-</span></p>
+<div class="card">
+    <h3>DeviceOrientation（方向角度）</h3>
+    <div class="val-row"><span class="val-title">Alpha (Z)</span><span id="alpha" class="val">-</span></div>
+    <div class="val-row"><span class="val-title">Beta (X)</span><span id="beta" class="val">-</span></div>
+    <div class="val-row"><span class="val-title">Gamma (Y)</span><span id="gamma" class="val">-</span></div>
+</div>
 
-<h3>DeviceMotion (加速度)</h3>
-<p class="val">ax：<span id="ax">-</span></p>
-<p class="val">ay：<span id="ay">-</span></p>
-<p class="val">az：<span id="az">-</span></p>
+<div class="card">
+    <h3>DeviceMotion（加速度 / 無重力）</h3>
+    <div class="val-row"><span class="val-title">ax</span><span id="ax" class="val">-</span></div>
+    <div class="val-row"><span class="val-title">ay</span><span id="ay" class="val">-</span></div>
+    <div class="val-row"><span class="val-title">az</span><span id="az" class="val">-</span></div>
+</div>
 
-<h3>DeviceMotion (含重力)</h3>
-<p class="val">ax_g：<span id="ax_g">-</span></p>
-<p class="val">ay_g：<span id="ay_g">-</span></p>
-<p class="val">az_g：<span id="az_g">-</span></p>
+<div class="card">
+    <h3>DeviceMotion（加速度 / 含重力）</h3>
+    <div class="val-row"><span class="val-title">ax_g</span><span id="ax_g" class="val">-</span></div>
+    <div class="val-row"><span class="val-title">ay_g</span><span id="ay_g" class="val">-</span></div>
+    <div class="val-row"><span class="val-title">az_g</span><span id="az_g" class="val">-</span></div>
+</div>
 
-<h3>Gyroscope 旋轉速率</h3>
-<p class="val">α(速度)：<span id="rAlpha">-</span></p>
-<p class="val">β(速度)：<span id="rBeta">-</span></p>
-<p class="val">γ(速度)：<span id="rGamma">-</span></p>
+<div class="card">
+    <h3>Gyroscope（旋轉速率）</h3>
+    <div class="val-row"><span class="val-title">α</span><span id="rAlpha" class="val">-</span></div>
+    <div class="val-row"><span class="val-title">β</span><span id="rBeta" class="val">-</span></div>
+    <div class="val-row"><span class="val-title">γ</span><span id="rGamma" class="val">-</span></div>
+</div>
 
 <script>
+// DOM
 const btn = document.getElementById("btn");
 
-// Orientation
 const alphaEl = document.getElementById("alpha");
 const betaEl  = document.getElementById("beta");
 const gammaEl = document.getElementById("gamma");
 
-// Acceleration
 const axEl = document.getElementById("ax");
 const ayEl = document.getElementById("ay");
 const azEl = document.getElementById("az");
 
-// Acceleration including gravity
 const axgEl = document.getElementById("ax_g");
 const aygEl = document.getElementById("ay_g");
 const azgEl = document.getElementById("az_g");
 
-// Rotation rate
 const rAlphaEl = document.getElementById("rAlpha");
 const rBetaEl  = document.getElementById("rBeta");
 const rGammaEl = document.getElementById("rGamma");
 
+// ======== EVENT ========
 btn.addEventListener("click", async () => {
     try {
-        // 檢查支援度
         if (!window.DeviceMotionEvent && !window.DeviceOrientationEvent) {
             alert("此裝置不支援 Motion/Orientation 感測器");
             return;
         }
 
-        // ======== Orientation 授權 ========
+        // Orientation 授權
         if (typeof DeviceOrientationEvent?.requestPermission === "function") {
             const r1 = await DeviceOrientationEvent.requestPermission();
             if (r1 !== "granted") {
@@ -78,7 +81,7 @@ btn.addEventListener("click", async () => {
             }
         }
 
-        // ======== Motion 授權 ========
+        // Motion 授權
         if (typeof DeviceMotionEvent?.requestPermission === "function") {
             const r2 = await DeviceMotionEvent.requestPermission();
             if (r2 !== "granted") {
@@ -87,14 +90,14 @@ btn.addEventListener("click", async () => {
             }
         }
 
-        // ======== DeviceOrientation Listener ========
+        // Orientation Listener
         window.addEventListener("deviceorientation", (event) => {
             alphaEl.textContent = event.alpha?.toFixed(2) ?? "-";
             betaEl.textContent  = event.beta?.toFixed(2) ?? "-";
             gammaEl.textContent = event.gamma?.toFixed(2) ?? "-";
         });
 
-        // ======== DeviceMotion Listener ========
+        // Motion Listener
         window.addEventListener("devicemotion", (event) => {
             const acc = event.acceleration || {};
             axEl.textContent = acc.x?.toFixed(2) ?? "-";
