@@ -8,7 +8,7 @@
 </head>
 
 <body>
-<h1>老師你好~ 我將作業1與2整合在一起</h1>
+<h2>老師你好~ 我將作業1與2整合在一起</h2>
 <h2>📱 DeviceOrientation + DeviceMotion + GPS</h2>
 <p style="text-align:center; color:#555; margin-bottom:25px;">
     請按下授權按鈕後，旋轉 / 搖動手機，並允許定位。
@@ -96,63 +96,68 @@ function getGeoLocation() {
     });
 }
 
-btn.addEventListener("click", async () => {
+// ====Event====
+btn.addEventListener("click", () => {
 
     // 1. Orientation Permission
+    let orientationPromise = Promise.resolve();
     if (typeof DeviceOrientationEvent?.requestPermission === "function") {
-        const res = await DeviceOrientationEvent.requestPermission();
-        if (res !== "granted") {
-            alert("未允許方向感測器");
-            return;
-        }
+        orientationPromise = DeviceOrientationEvent.requestPermission()
+            .then(res => {
+                if (res !== "granted") throw new Error("未允許方向感測器");
+            });
     }
 
     // 2. Motion Permission
+    let motionPromise = Promise.resolve();
     if (typeof DeviceMotionEvent?.requestPermission === "function") {
-        const res = await DeviceMotionEvent.requestPermission();
-        if (res !== "granted") {
-            alert("未允許加速度感測器");
-            return;
-        }
+        motionPromise = DeviceMotionEvent.requestPermission()
+            .then(res => {
+                if (res !== "granted") throw new Error("未允許加速度感測器");
+            });
     }
 
-    // 3. GPS
-    try {
-        const geo = await getGeoLocation();
-        latEl.textContent = geo.latitude;
-        lngEl.textContent = geo.longitude;
-        altEl.textContent = geo.altitude;
-    } catch (err) {
-        alert("定位失敗：" + err);
-    }
+    // 執行 Promise
+    orientationPromise
+        .then(() => motionPromise)
+        .then(() => getGeoLocation())
+        .then(geo => {
+            latEl.textContent = geo.latitude;
+            lngEl.textContent = geo.longitude;
+            altEl.textContent = geo.altitude;
 
-    // 4. Orientation Listener
-    window.addEventListener("deviceorientation", (event) => {
-        alphaEl.textContent = event.alpha?.toFixed(2) ?? "-";
-        betaEl.textContent  = event.beta?.toFixed(2) ?? "-";
-        gammaEl.textContent = event.gamma?.toFixed(2) ?? "-";
-    });
+            // Orientation Listener
+            window.addEventListener("deviceorientation", (event) => {
+                alphaEl.textContent = event.alpha?.toFixed(2) ?? "-";
+                betaEl.textContent  = event.beta?.toFixed(2) ?? "-";
+                gammaEl.textContent = event.gamma?.toFixed(2) ?? "-";
+            });
 
-    // 5. Motion Listener
-    window.addEventListener("devicemotion", (event) => {
-        const acc = event.acceleration || {};
-        axEl.textContent = acc.x?.toFixed(2) ?? "-";
-        ayEl.textContent = acc.y?.toFixed(2) ?? "-";
-        azEl.textContent = acc.z?.toFixed(2) ?? "-";
+            // Motion Listener
+            window.addEventListener("devicemotion", (event) => {
+                const acc = event.acceleration || {};
+                axEl.textContent = acc.x?.toFixed(2) ?? "-";
+                ayEl.textContent = acc.y?.toFixed(2) ?? "-";
+                azEl.textContent = acc.z?.toFixed(2) ?? "-";
 
-        const accG = event.accelerationIncludingGravity || {};
-        axgEl.textContent = accG.x?.toFixed(2) ?? "-";
-        aygEl.textContent = accG.y?.toFixed(2) ?? "-";
-        azgEl.textContent = accG.z?.toFixed(2) ?? "-";
+                const accG = event.accelerationIncludingGravity || {};
+                axgEl.textContent = accG.x?.toFixed(2) ?? "-";
+                aygEl.textContent = accG.y?.toFixed(2) ?? "-";
+                azgEl.textContent = accG.z?.toFixed(2) ?? "-";
 
-        const rot = event.rotationRate || {};
-        rAlphaEl.textContent = rot.alpha?.toFixed(2) ?? "-";
-        rBetaEl.textContent  = rot.beta?.toFixed(2) ?? "-";
-        rGammaEl.textContent = rot.gamma?.toFixed(2) ?? "-";
-    });
+                const rot = event.rotationRate || {};
+                rAlphaEl.textContent = rot.alpha?.toFixed(2) ?? "-";
+                rBetaEl.textContent  = rot.beta?.toFixed(2) ?? "-";
+                rGammaEl.textContent = rot.gamma?.toFixed(2) ?? "-";
+            });
 
-    btn.disabled = true;
-    btn.textContent = "感測器已啟動";
+            btn.disabled = true;
+            btn.textContent = "感測器已啟動";
+        })
+        .catch(err => {
+            alert(err.message || err);
+        });
+
 });
 </script>
 </body>
