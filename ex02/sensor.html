@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" href="style.css">
+<title>Orientation + Motion Demo</title>
+</head>
+
+<body>
+
+<h2>📱 DeviceOrientation + DeviceMotion 示範</h2>
+<p style="text-align:center; color:#555; margin-bottom:25px;">
+    請按下授權按鈕後，旋轉或搖動手機。
+</p>
+
+<button id="btn">取得感測器授權並開始</button>
+
+<!-- Orientation -->
+<div class="card">
+    <h3>DeviceOrientation（方向角度）</h3>
+    <div class="val-row"><span class="val-title">Alpha (Z)</span><span id="alpha" class="val">-</span></div>
+    <div class="val-row"><span class="val-title">Beta (X)</span><span id="beta" class="val">-</span></div>
+    <div class="val-row"><span class="val-title">Gamma (Y)</span><span id="gamma" class="val">-</span></div>
+</div>
+
+<!-- Acceleration -->
+<div class="card">
+    <h3>DeviceMotion（加速度 / 無重力）</h3>
+    <div class="val-row"><span class="val-title">ax</span><span id="ax" class="val">-</span></div>
+    <div class="val-row"><span class="val-title">ay</span><span id="ay" class="val">-</span></div>
+    <div class="val-row"><span class="val-title">az</span><span id="az" class="val">-</span></div>
+</div>
+
+<!-- Acceleration with gravity -->
+<div class="card">
+    <h3>DeviceMotion（加速度 / 含重力）</h3>
+    <div class="val-row"><span class="val-title">ax_g</span><span id="ax_g" class="val">-</span></div>
+    <div class="val-row"><span class="val-title">ay_g</span><span id="ay_g" class="val">-</span></div>
+    <div class="val-row"><span class="val-title">az_g</span><span id="az_g" class="val">-</span></div>
+</div>
+
+<!-- Rotation -->
+<div class="card">
+    <h3>Gyroscope（旋轉速率）</h3>
+    <div class="val-row"><span class="val-title">α</span><span id="rAlpha" class="val">-</span></div>
+    <div class="val-row"><span class="val-title">β</span><span id="rBeta" class="val">-</span></div>
+    <div class="val-row"><span class="val-title">γ</span><span id="rGamma" class="val">-</span></div>
+</div>
+
+<script>
+// DOM
+const btn = document.getElementById("btn");
+
+const alphaEl = document.getElementById("alpha");
+const betaEl  = document.getElementById("beta");
+const gammaEl = document.getElementById("gamma");
+
+const axEl = document.getElementById("ax");
+const ayEl = document.getElementById("ay");
+const azEl = document.getElementById("az");
+
+const axgEl = document.getElementById("ax_g");
+const aygEl = document.getElementById("ay_g");
+const azgEl = document.getElementById("az_g");
+
+const rAlphaEl = document.getElementById("rAlpha");
+const rBetaEl  = document.getElementById("rBeta");
+const rGammaEl = document.getElementById("rGamma");
+
+// ======== BUTTON EVENT ========
+btn.addEventListener("click", async () => {
+    try {
+        if (!window.DeviceMotionEvent && !window.DeviceOrientationEvent) {
+            alert("此裝置不支援 Motion/Orientation 感測器");
+            return;
+        }
+
+        // Orientation Permission
+        if (typeof DeviceOrientationEvent?.requestPermission === "function") {
+            const r1 = await DeviceOrientationEvent.requestPermission();
+            if (r1 !== "granted") {
+                alert("未允許讀取 DeviceOrientation");
+                return;
+            }
+        }
+
+        // Motion Permission
+        if (typeof DeviceMotionEvent?.requestPermission === "function") {
+            const r2 = await DeviceMotionEvent.requestPermission();
+            if (r2 !== "granted") {
+                alert("未允許讀取 DeviceMotion");
+                return;
+            }
+        }
+
+        // Orientation Listener
+        window.addEventListener("deviceorientation", (event) => {
+            alphaEl.textContent = event.alpha?.toFixed(2) ?? "-";
+            betaEl.textContent  = event.beta?.toFixed(2) ?? "-";
+            gammaEl.textContent = event.gamma?.toFixed(2) ?? "-";
+        });
+
+        // Motion Listener
+        window.addEventListener("devicemotion", (event) => {
+            const acc = event.acceleration || {};
+            axEl.textContent = acc.x?.toFixed(2) ?? "-";
+            ayEl.textContent = acc.y?.toFixed(2) ?? "-";
+            azEl.textContent = acc.z?.toFixed(2) ?? "-";
+
+            const accG = event.accelerationIncludingGravity || {};
+            axgEl.textContent = accG.x?.toFixed(2) ?? "-";
+            aygEl.textContent = accG.y?.toFixed(2) ?? "-";
+            azgEl.textContent = accG.z?.toFixed(2) ?? "-";
+
+            const rot = event.rotationRate || {};
+            rAlphaEl.textContent = rot.alpha?.toFixed(2) ?? "-";
+            rBetaEl.textContent  = rot.beta?.toFixed(2) ?? "-";
+            rGammaEl.textContent = rot.gamma?.toFixed(2) ?? "-";
+        });
+
+        btn.disabled = true;
+        btn.textContent = "感測器已啟動";
+
+    } catch (err) {
+        alert("錯誤：" + err);
+    }
+});
+</script>
+
+</body>
+</html>
