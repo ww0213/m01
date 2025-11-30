@@ -4,18 +4,27 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="stylesheet" href="style.css">
-<title>Orientation + Motion Demo</title>
+<title>Orientation + Motion + GPS Demo</title>
 </head>
 
 <body>
 
-<h2>📱 DeviceOrientation + DeviceMotion</h2>
+<h2>📱 DeviceOrientation + DeviceMotion + GPS</h2>
 <p style="text-align:center; color:#555; margin-bottom:25px;">
-    請按下授權按鈕後，旋轉或搖動手機。
+    請按下授權按鈕後，旋轉 / 搖動手機，並允許定位。
 </p>
 
-<button id="btn">取得感測器授權並開始</button>
+<button id="btn">取得感測器與定位授權</button>
 
+<!-- GPS -->
+<div class="card">
+    <h3>地理位置（GPS）</h3>
+    <div class="val-row"><span class="val-title">緯度</span><span id="lat" class="val">-</span></div>
+    <div class="val-row"><span class="val-title">經度</span><span id="lng" class="val">-</span></div>
+    <div class="val-row"><span class="val-title">海拔</span><span id="alt" class="val">-</span></div>
+</div>
+
+<!-- Orientation -->
 <div class="card">
     <h3>DeviceOrientation（方向角度）</h3>
     <div class="val-row"><span class="val-title">Alpha (Z)</span><span id="alpha" class="val">-</span></div>
@@ -23,6 +32,7 @@
     <div class="val-row"><span class="val-title">Gamma (Y)</span><span id="gamma" class="val">-</span></div>
 </div>
 
+<!-- Motion -->
 <div class="card">
     <h3>DeviceMotion（加速度 / 無重力）</h3>
     <div class="val-row"><span class="val-title">ax</span><span id="ax" class="val">-</span></div>
@@ -37,6 +47,7 @@
     <div class="val-row"><span class="val-title">az_g</span><span id="az_g" class="val">-</span></div>
 </div>
 
+<!-- Rotation -->
 <div class="card">
     <h3>Gyroscope（旋轉速率）</h3>
     <div class="val-row"><span class="val-title">α</span><span id="rAlpha" class="val">-</span></div>
@@ -45,7 +56,7 @@
 </div>
 
 <script>
-// DOM
+// DOM Elements
 const btn = document.getElementById("btn");
 
 const alphaEl = document.getElementById("alpha");
@@ -64,82 +75,108 @@ const rAlphaEl = document.getElementById("rAlpha");
 const rBetaEl  = document.getElementById("rBeta");
 const rGammaEl = document.getElementById("rGamma");
 
-// ======== EVENT ========
+const latEl = document.getElementById("lat");
+const lngEl = document.getElementById("lng");
+const altEl = document.getElementById("alt");
+
+
+// ========= 請求感測器權限（加速度、陀螺儀、GPS） =========
+function requestSensorPermissions() {
+    return new Promise((resolve) => {
+        if (!navigator.permissions) {
+            console.log("Permissions API 不支援，略過權限檢查");
+            resolve();
+            return;
+        }
+
+        Promise.all([
+            navigator.permissions.query({ name: "accelerometer" }).catch(() => {}),
+            navigator.permissions.query({ name: "gyroscope" }).catch(() => {}),
+            navigator.permissions.query({ name: "geolocation" }).catch(() => {})
+        ])
+        .then(() => resolve())
+        .catch((err) => {
+            console.log("權限請求錯誤：", err);
+            resolve(); // 不阻斷流程
+        });
+    });
+}
+
+
+// ========= 取得 GPS（緯度 / 經度 / 海拔） =========
+function getGeoLocation() {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject("瀏覽器不支援地理位置");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const c = pos.coords;
+                resolve({
+                    latitude: c.latitude,
+                    longitude: c.longitude,
+                    altitude: c.altitude ?? "未知"
+                });
+            },
+            (err) => reject("定位失敗：" + err.message),
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    });
+}
+
+
+// ========================== 主流程（按下按鈕） ==========================
 btn.addEventListener("click", () => {
 
-    // 檢查支援度
     if (!window.DeviceMotionEvent && !window.DeviceOrientationEvent) {
         alert("此裝置不支援 Motion/Orientation 感測器");
         return;
     }
 
-    // 取得 Orientation 授權
-    const orientationPromise = new Promise((resolve, reject) => {
-        if (typeof DeviceOrientationEvent?.requestPermission === "function") {
-            DeviceOrientationEvent.requestPermission()
-                .then(res => {
-                    if (res === "granted") resolve();
-                    else reject("未允許讀取 DeviceOrientation");
-                })
-                .catch(err => reject(err));
-        } else {
-            resolve(); // 不需要授權
-        }
-    });
+    requestSensorPermissions()
+    .then(() => getGeoLocation())
+    .then((geo) => {
+        latEl.textContent = geo.latitude;
+        lngEl.textContent = geo.longitude;
+        altEl.textContent = geo.altitude;
+    })
+    .then(() => {
 
-    // 取得 Motion 授權
-    const motionPromise = new Promise((resolve, reject) => {
-        if (typeof DeviceMotionEvent?.requestPermission === "function") {
-            DeviceMotionEvent.requestPermission()
-                .then(res => {
-                    if (res === "granted") resolve();
-                    else reject("未允許讀取 DeviceMotion");
-                })
-                .catch(err => reject(err));
-        } else {
-            resolve(); // 不需要授權
-        }
-    });
-
-    // 執行流程
-    Promise.all([orientationPromise, motionPromise])
-        .then(() => {
-            // ======== Orientation Listener ========
-            window.addEventListener("deviceorientation", (event) => {
-                alphaEl.textContent = event.alpha?.toFixed(2) ?? "-";
-                betaEl.textContent  = event.beta?.toFixed(2) ?? "-";
-                gammaEl.textContent = event.gamma?.toFixed(2) ?? "-";
-            });
-
-            // ======== Motion Listener ========
-            window.addEventListener("devicemotion", (event) => {
-                const acc = event.acceleration || {};
-                axEl.textContent = acc.x?.toFixed(2) ?? "-";
-                ayEl.textContent = acc.y?.toFixed(2) ?? "-";
-                azEl.textContent = acc.z?.toFixed(2) ?? "-";
-
-                const accG = event.accelerationIncludingGravity || {};
-                axgEl.textContent = accG.x?.toFixed(2) ?? "-";
-                aygEl.textContent = accG.y?.toFixed(2) ?? "-";
-                azgEl.textContent = accG.z?.toFixed(2) ?? "-";
-
-                const rot = event.rotationRate || {};
-                rAlphaEl.textContent = rot.alpha?.toFixed(2) ?? "-";
-                rBetaEl.textContent  = rot.beta?.toFixed(2) ?? "-";
-                rGammaEl.textContent = rot.gamma?.toFixed(2) ?? "-";
-            });
-
-            // 更新按鈕狀態
-            btn.disabled = true;
-            btn.textContent = "感測器已啟動";
-        })
-
-        // 授權錯誤
-        .catch(err => {
-            alert("錯誤：" + err);
+        // ===== Orientation =====
+        window.addEventListener("deviceorientation", (event) => {
+            alphaEl.textContent = event.alpha?.toFixed(2) ?? "-";
+            betaEl.textContent  = event.beta?.toFixed(2) ?? "-";
+            gammaEl.textContent = event.gamma?.toFixed(2) ?? "-";
         });
-});
 
+        // ===== Motion =====
+        window.addEventListener("devicemotion", (event) => {
+            const acc = event.acceleration || {};
+            axEl.textContent = acc.x?.toFixed(2) ?? "-";
+            ayEl.textContent = acc.y?.toFixed(2) ?? "-";
+            azEl.textContent = acc.z?.toFixed(2) ?? "-";
+
+            const accG = event.accelerationIncludingGravity || {};
+            axgEl.textContent = accG.x?.toFixed(2) ?? "-";
+            aygEl.textContent = accG.y?.toFixed(2) ?? "-";
+            azgEl.textContent = accG.z?.toFixed(2) ?? "-";
+
+            const rot = event.rotationRate || {};
+            rAlphaEl.textContent = rot.alpha?.toFixed(2) ?? "-";
+            rBetaEl.textContent  = rot.beta?.toFixed(2) ?? "-";
+            rGammaEl.textContent = rot.gamma?.toFixed(2) ?? "-";
+        });
+
+        btn.disabled = true;
+        btn.textContent = "已啟動（感測器 + GPS）";
+    })
+    .catch((err) => {
+        alert("錯誤：" + err);
+    });
+
+});
 </script>
 
 </body>
