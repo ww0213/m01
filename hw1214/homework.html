@@ -3,33 +3,44 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>1214 HOMEWORK FETCH: POST / GET </title>
+    <title>1214 HOMEWORK FETCH: POST / GET</title>
 </head>
 
 <body>
-    <h2>1214 HOMEWORK FETCH:</h2>
-    <h2>FETCH: POST / GET</h2>
-    <h2>點選按鈕後結果會出現在下方</h2>
-    <form>
-        <label>
-            姓名：
-            <input type="text" id="name">
-        </label><br><br>
+    <div class="container">
+        <h2>1214 HOMEWORK FETCH:</h2>
+        <h2>FETCH: POST / GET</h2>
+        <h3>點選按鈕後結果會出現在下方</h3>
+        <form>
+            <label for="name">姓名：</label>
+            <input type="text" id="name" placeholder="請輸入姓名">
 
-        <label>
-            電話：
-            <input type="tel" id="phone">
-        </label><br><br>
+            <label for="phone">電話：</label>
+            <input type="tel" id="phone" placeholder="請輸入電話">
 
-        <label>
-            年齡：
-            <input type="text" id="age">
-        </label><br><br>
+            <label for="age">年齡：</label>
+            <input type="number" id="age" placeholder="請輸入年齡">
 
-        <button type="button" id="postBtn">送出 (POST)</button>
-        <button type="button" id="getBtn">送出 (GET)</button>
-    </form>
-    <pre id="result"></pre>
+            <label for="email">電子郵件：</label>
+            <input type="email" id="email" placeholder="請輸入電子郵件">
+
+            <label for="dob">出生日期：</label>
+            <input type="date" id="dob">
+
+            <label for="address">地址：</label>
+            <input type="text" id="address" placeholder="請輸入地址">
+
+            <button type="button" id="postBtn">送出 (POST)</button>
+            <button type="button" id="getBtn">查詢 (GET)</button>
+        </form>
+
+        <div id="result"
+            style="margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: #f8f8f8;">
+            <h3>結果：</h3>
+            <p>當你點擊 POST 或 GET 按鈕後，這裡會顯示結果。</p>
+        </div>
+    </div>
+
     <script>
         // POST
         document.getElementById('postBtn').addEventListener('click', () => {
@@ -41,41 +52,64 @@
                 body: JSON.stringify({
                     name: document.getElementById('name').value,
                     phone: document.getElementById('phone').value,
-                    age: document.getElementById('age').value
+                    age: document.getElementById('age').value,
+                    email: document.getElementById('email').value,
+                    dob: document.getElementById('dob').value,
+                    address: document.getElementById('address').value
                 })
             })
                 .then(res => res.json())
                 .then(data => {
-                    document.getElementById('result').textContent =
-                        'POST 成功\n' + JSON.stringify(data, null, 2);
+                    const resultContainer = document.getElementById('result');
+                    resultContainer.innerHTML = `
+                        <h3>POST 成功</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
                 })
                 .catch(err => {
-                    document.getElementById('result').textContent =
-                        'POST 失敗\n' + err;
+                    const resultContainer = document.getElementById('result');
+                    resultContainer.innerHTML = `
+                        <h3>POST 失敗</h3>
+                        <pre>${err}</pre>
+                    `;
                 });
         });
+
         // GET
         document.getElementById('getBtn').addEventListener('click', () => {
             const name = document.getElementById('name').value;
             const phone = document.getElementById('phone').value;
             const age = document.getElementById('age').value;
+            const email = document.getElementById('email').value;
+            const dob = document.getElementById('dob').value;
+            const address = document.getElementById('address').value;
 
             const query =
                 `name=${encodeURIComponent(name)}&` +
                 `phone=${encodeURIComponent(phone)}&` +
-                `age=${encodeURIComponent(age)}`;
+                `age=${encodeURIComponent(age)}&` +
+                `email=${encodeURIComponent(email)}&` +
+                `dob=${encodeURIComponent(dob)}&` +
+                `address=${encodeURIComponent(address)}`;
 
             fetch(`https://httpcan.org/get?${query}`)
                 .then(res => res.json())
                 .then(data => {
-                    document.getElementById('result').textContent =
-                        'GET 成功\n' + JSON.stringify(data, null, 2);
+                    const resultContainer = document.getElementById('result');
+                    resultContainer.innerHTML = `
+                        <h3>GET 成功</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
                 })
                 .catch(err => {
-                    document.getElementById('result').textContent =
-                        'GET 失敗\n' + err;
+                    const resultContainer = document.getElementById('result');
+                    resultContainer.innerHTML = `
+                        <h3>GET 失敗</h3>
+                        <pre>${err}</pre>
+                    `;
                 });
         });
     </script>
 </body>
+
 </html>
