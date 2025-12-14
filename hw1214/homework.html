@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <title>1214 HOMEWORK FETCH: POST / GET </title>
+</head>
+
+<body>
+    <h2>1214 HOMEWORK FETCH:</h2>
+    <h2>FETCH: POST / GET</h2>
+    <h2>點選按鈕後結果會出現在下方</h2>
+    <form>
+        <label>
+            姓名：
+            <input type="text" id="name">
+        </label><br><br>
+
+        <label>
+            電話：
+            <input type="tel" id="phone">
+        </label><br><br>
+
+        <label>
+            年齡：
+            <input type="number" id="age">
+        </label><br><br>
+
+        <button type="button" id="postBtn">送出 (POST)</button>
+        <button type="button" id="getBtn">查詢 (GET)</button>
+    </form>
+    <pre id="result"></pre>
+    <script>
+        // POST
+        document.getElementById('postBtn').addEventListener('click', () => {
+            fetch('https://httpcan.org/post', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: document.getElementById('name').value,
+                    phone: document.getElementById('phone').value,
+                    age: document.getElementById('age').value
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('result').textContent =
+                        'POST 成功\n' + JSON.stringify(data, null, 2);
+                })
+                .catch(err => {
+                    document.getElementById('result').textContent =
+                        'POST 失敗\n' + err;
+                });
+        });
+        // GET
+        document.getElementById('getBtn').addEventListener('click', () => {
+            const name = document.getElementById('name').value;
+            const phone = document.getElementById('phone').value;
+            const age = document.getElementById('age').value;
+
+            const query =
+                `name=${encodeURIComponent(name)}&` +
+                `phone=${encodeURIComponent(phone)}&` +
+                `age=${encodeURIComponent(age)}`;
+
+            fetch(`https://httpcan.org/get?${query}`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('result').textContent =
+                        'GET 成功\n' + JSON.stringify(data, null, 2);
+                })
+                .catch(err => {
+                    document.getElementById('result').textContent =
+                        'GET 失敗\n' + err;
+                });
+        });
+    </script>
+</body>
+</html>
