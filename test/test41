@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <title>GET 表單</title>
+</head>
+
+<body>
+
+    <h2>GET 表單</h2>
+
+    <form>
+        <label>
+            姓名：
+            <input type="text" id="name">
+        </label><br><br>
+
+        <label>
+            電話：
+            <input type="tel" id="phone">
+        </label><br><br>
+
+        <label>
+            年齡：
+            <input type="number" id="age">
+        </label><br><br>
+
+        <button type="button" id="getBtn">查詢 (GET)</button>
+    </form>
+
+    <script>
+        document.getElementById('getBtn').addEventListener('click', () => {
+            const name = document.getElementById('name').value;
+            const phone = document.getElementById('phone').value;
+            const age = document.getElementById('age').value;
+
+            const query =
+                `name=${encodeURIComponent(name)}&` +
+                `phone=${encodeURIComponent(phone)}&` +
+                `age=${encodeURIComponent(age)}`;
+
+            fetch(`https://httpcan.org/get?${query}`)
+                .then(res => res.json())
+                .then(data => {
+                    console.log('GET 成功:', data);
+                })
+                .catch(err => {
+                    console.error('GET 失敗:', err);
+                });
+        });
+    </script>
+
+</body>
+
+</html>
