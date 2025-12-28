@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>天氣查詢 (CWA API)</title>
+    <title>系統查詢終端</title>
     <style>
         body {
             font-family: 'Courier New', Courier, monospace;
@@ -46,7 +47,9 @@
         }
 
         @keyframes blink {
-            50% { opacity: 0; }
+            50% {
+                opacity: 0;
+            }
         }
 
         .input-group {
@@ -60,43 +63,37 @@
             font-weight: bold;
         }
 
-        input[type="text"], select {
+        select {
             width: 100%;
             padding: 10px;
             background-color: #000;
             color: #0f0;
             border: 1px solid #0f0;
-            border-radius: 0;
-            box-sizing: border-box;
             font-family: 'Courier New', Courier, monospace;
             font-size: 16px;
             outline: none;
         }
 
-        input[type="text"]:focus, select:focus {
-            background-color: #001a00;
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
-        }
-
         button {
             width: 100%;
-            padding: 12px;
+            padding: 15px;
             background-color: #000;
             color: #0f0;
             border: 2px solid #0f0;
-            border-radius: 0;
-            font-size: 16px;
+            font-size: 18px;
             font-family: 'Courier New', Courier, monospace;
             font-weight: bold;
             cursor: pointer;
             text-transform: uppercase;
             transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
         }
 
         button:hover {
             background-color: #0f0;
             color: #000;
-            box-shadow: 0 0 15px #0f0;
+            box-shadow: 0 0 25px #0f0;
         }
 
         button:disabled {
@@ -106,10 +103,33 @@
             box-shadow: none;
         }
 
+        #gpsBtn::before {
+            content: "☁";
+            position: absolute;
+            left: 20px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        #gpsBtn:hover::before {
+            opacity: 1;
+        }
+
         #result {
             margin-top: 20px;
             padding-top: 20px;
             border-top: 2px dashed #0f0;
+            min-height: 100px;
+        }
+
+        .location-badge {
+            text-align: center;
+            font-size: 1.2rem;
+            border: 1px solid #0f0;
+            padding: 10px;
+            margin-bottom: 20px;
+            background: #001a00;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
         }
 
         .weather-card {
@@ -121,7 +141,7 @@
         }
 
         .weather-card::before {
-            content: "[SYSTEM MSG]";
+            content: "[DATA STREAM]";
             position: absolute;
             top: -10px;
             left: 10px;
@@ -167,33 +187,36 @@
             text-align: center;
             color: #0f0;
             font-family: 'Courier New', Courier, monospace;
+            margin-top: 20px;
         }
 
         .loading::after {
-            content: ""; /* 初始為空 */
-            animation: typingDots 1.5s steps(4, end) infinite; /* 讓它分成4個階段跳動 */
+            content: "";
+            animation: typingDots 1.5s steps(4, end) infinite;
         }
 
         @keyframes typingDots {
-            0%, 20% { content: ""; }
-            40% { content: "."; }
-            60% { content: ".."; }
-            80%, 100% { content: "..."; }
+
+            0%,
+            20% {
+                content: "";
+            }
+
+            40% {
+                content: ".";
+            }
+
+            60% {
+                content: "..";
+            }
+
+            80%,
+            100% {
+                content: "...";
+            }
         }
 
-        /* Scrollbar Styling */
-        ::-webkit-scrollbar {
-            width: 10px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #000;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #0f0;
-            border: 1px solid #000;
-        }
-
-        /* Tabs Styling */
+        /* Tabs */
         .nav-tabs {
             display: flex;
             margin-bottom: 20px;
@@ -212,11 +235,13 @@
             font-size: 1.1rem;
             opacity: 0.6;
             transition: all 0.3s;
+            box-shadow: none;
         }
 
         .nav-btn:hover {
             background: #003300;
             opacity: 1;
+            box-shadow: none;
         }
 
         .nav-btn.active {
@@ -235,314 +260,326 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .stars {
-            color: #ffff00; /* 實心星 螢光黃 */
-            text-shadow: 0 0 8px #ffff00, 0 0 15px rgba(255, 255, 0, 0.5);
+            color: #ffff00;
+            text-shadow: 0 0 8px #ffff00;
             letter-spacing: 2px;
         }
 
         .stars-empty {
-            color: #003300; /* 空心星 深暗綠色 背景 */
-            text-shadow: none;
-            opacity: 0.5;
+            color: #003300;
             letter-spacing: 2px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #000;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #0f0;
+            border: 1px solid #000;
         }
     </style>
 </head>
+
 <body>
 
-<div class="container">
-    <h1>系統查詢終端</h1>
-    
-    <div class="nav-tabs">
-        <button class="nav-btn active" onclick="switchTab('weather')">天氣模組 (WEATHER)</button>
-        <button class="nav-btn" onclick="switchTab('horoscope')">運勢模組 (FATE)</button>
-    </div>
+    <div class="container">
+        <h1>系統查詢終端</h1>
 
-    <!-- Weather Section -->
-    <div id="weatherSection" class="section-content active">
-        <div class="input-group">
-            <label for="location">目標座標 (LOCATION)</label>
-            <select id="location">
-                <option value="臺北市">臺北市</option>
-                <option value="新北市">新北市</option>
-                <option value="基隆市">基隆市</option>
-                <option value="桃園市">桃園市</option>
-                <option value="新竹縣">新竹縣</option>
-                <option value="新竹市">新竹市</option>
-                <option value="苗栗縣">苗栗縣</option>
-                <option value="臺中市">臺中市</option>
-                <option value="彰化縣">彰化縣</option>
-                <option value="南投縣">南投縣</option>
-                <option value="雲林縣">雲林縣</option>
-                <option value="嘉義縣">嘉義縣</option>
-                <option value="嘉義市">嘉義市</option>
-                <option value="臺南市">臺南市</option>
-                <option value="高雄市">高雄市</option>
-                <option value="屏東縣">屏東縣</option>
-                <option value="宜蘭縣">宜蘭縣</option>
-                <option value="花蓮縣">花蓮縣</option>
-                <option value="臺東縣">臺東縣</option>
-                <option value="澎湖縣">澎湖縣</option>
-                <option value="金門縣">金門縣</option>
-                <option value="連江縣">連江縣</option>
-            </select>
+        <div class="nav-tabs">
+            <button class="nav-btn active" onclick="switchTab('weather')">天氣掃描 (SCAN)</button>
+            <button class="nav-btn" onclick="switchTab('horoscope')">運勢演算 (FATE)</button>
         </div>
 
-        <div class="input-group">
-            <label for="timeSlot">時間跨度 (TIMEFRAME)</label>
-            <select id="timeSlot">
-                <option value="all">全域掃描 (未來36hr)</option>
-                <option value="0">區塊一 (0-12hr)</option>
-                <option value="1">區塊二 (12-24hr)</option>
-                <option value="2">區塊三 (24-36hr)</option>
-            </select>
+        <!-- 天氣區塊 -->
+        <div id="weatherSection" class="section-content active">
+            <p style="text-align: center; margin-bottom: 20px; color: #00cc00;">
+                [INFO] 請點擊下方按鈕以啟動衛星定位與氣象分析模組。
+            </p>
+
+            <button id="gpsBtn">啟動 GPS 定位掃描</button>
         </div>
 
-        <button id="searchBtn">執行天氣掃描</button>
-    </div>
-
-    <!-- Horoscope Section -->
-    <div id="horoscopeSection" class="section-content">
-        <div class="input-group">
-            <label for="zodiac">星體校準 (ZODIAC)</label>
-            <select id="zodiac">
-                <option value="0">牡羊座 (Aries) 03/21-04/19</option>
-                <option value="1">金牛座 (Taurus) 04/20-05/20</option>
-                <option value="2">雙子座 (Gemini) 05/21-06/21</option>
-                <option value="3">巨蟹座 (Cancer) 06/22-07/22</option>
-                <option value="4">獅子座 (Leo) 07/23-08/22</option>
-                <option value="5">處女座 (Virgo) 08/23-09/22</option>
-                <option value="6">天秤座 (Libra) 09/23-10/23</option>
-                <option value="7">天蠍座 (Scorpio) 10/24-11/22</option>
-                <option value="8">射手座 (Sagittarius) 11/23-12/21</option>
-                <option value="9">摩羯座 (Capricorn) 12/22-01/19</option>
-                <option value="10">水瓶座 (Aquarius) 01/20-02/18</option>
-                <option value="11">雙魚座 (Pisces) 02/19-03/20</option>
-            </select>
+        <!-- 運勢區塊 -->
+        <div id="horoscopeSection" class="section-content">
+            <div class="input-group">
+                <label for="zodiac">星體校準 (ZODIAC)</label>
+                <select id="zodiac">
+                    <option value="0">牡羊座 (Aries)</option>
+                    <option value="1">金牛座 (Taurus)</option>
+                    <option value="2">雙子座 (Gemini)</option>
+                    <option value="3">巨蟹座 (Cancer)</option>
+                    <option value="4">獅子座 (Leo)</option>
+                    <option value="5">處女座 (Virgo)</option>
+                    <option value="6">天秤座 (Libra)</option>
+                    <option value="7">天蠍座 (Scorpio)</option>
+                    <option value="8">射手座 (Sagittarius)</option>
+                    <option value="9">摩羯座 (Capricorn)</option>
+                    <option value="10">水瓶座 (Aquarius)</option>
+                    <option value="11">雙魚座 (Pisces)</option>
+                </select>
+            </div>
+            <button id="fateBtn">執行運勢運算</button>
         </div>
-        <button id="fateBtn">執行運勢運算</button>
+
+        <div id="result"></div>
     </div>
 
-    <div id="result"></div>
-</div>
+    <script>
+        const gpsBtn = document.getElementById('gpsBtn');
+        const fateBtn = document.getElementById('fateBtn');
+        const resultDiv = document.getElementById('result');
 
-<script>
-    const API_KEY = 'CWA-23DB9672-6944-4A55-930F-F3F77C8FC07C';
-    const searchBtn = document.getElementById('searchBtn');
-    const fateBtn = document.getElementById('fateBtn');
-    const resultDiv = document.getElementById('result');
+        gpsBtn.addEventListener('click', startGPSScan);
+        fateBtn.addEventListener('click', generateFortune);
 
-    // Event Listeners 查詢按鈕
-    searchBtn.addEventListener('click', fetchWeather);
-    fateBtn.addEventListener('click', generateFortune);
+        function switchTab(tabName) {
+            document.querySelectorAll('.section-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
 
-    // 切換TAB
-    window.switchTab = function(tabName) {
-        // 隱藏所有區塊
-        document.querySelectorAll('.section-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-        
-        // 呈現天氣或運勢區塊
-        if (tabName === 'weather') {
-            document.getElementById('weatherSection').classList.add('active');
-            document.querySelectorAll('.nav-btn')[0].classList.add('active');
-        } else {
-            document.getElementById('horoscopeSection').classList.add('active');
-            document.querySelectorAll('.nav-btn')[1].classList.add('active');
-        }
-        
-        // 清除結果
-        resultDiv.innerHTML = '';
-    };
-
-    // --- 天氣 Logic ---
-    async function fetchWeather() {
-        const location = document.getElementById('location').value;
-        const timeSlot = document.getElementById('timeSlot').value;
-
-        resultDiv.innerHTML = '';
-        searchBtn.disabled = true;
-        searchBtn.textContent = "系統連線中...";
-        resultDiv.innerHTML = '<div class="loading">下載氣象數據包</div>';
-
-        const apiUrl = `https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=${API_KEY}&locationName=${encodeURIComponent(location)}`;
-
-        try {
-            const response = await fetch(apiUrl);
-            
-            if (!response.ok) {
-                if (response.status === 401) throw new Error("存取被拒 (401)");
-                else throw new Error(`連線中斷: ${response.status}`);
-            }
-
-            const data = await response.json();
-            
-            if (data.success === "true" && data.records.location.length > 0) {
-                displayWeather(data.records.location[0], timeSlot);
+            if (tabName === 'weather') {
+                document.getElementById('weatherSection').classList.add('active');
+                document.querySelectorAll('.nav-btn')[0].classList.add('active');
             } else {
-                throw new Error("無效的地理數據");
+                document.getElementById('horoscopeSection').classList.add('active');
+                document.querySelectorAll('.nav-btn')[1].classList.add('active');
+            }
+            resultDiv.innerHTML = '';
+        }
+
+        // --- GPS Logic ---
+        function startGPSScan() {
+            if (!navigator.geolocation) {
+                showError("錯誤: 此裝置不支援定位功能 (Geolocation not supported)");
+                return;
             }
 
-        } catch (error) {
-            showError(error.message);
-        } finally {
-            searchBtn.disabled = false;
-            searchBtn.textContent = "執行天氣掃描";
+            resultDiv.innerHTML = '<div class="loading">正在三角定位目前位置</div>';
+            gpsBtn.disabled = true;
+
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+
+                    try {
+                        // Parallel Fetch: Location Name + Weather Data
+                        resultDiv.innerHTML = '<div class="loading">位置已鎖定。正在下載環境數據</div>';
+
+                        const [locationName, weatherData] = await Promise.all([
+                            fetchLocationName(lat, lon),
+                            fetchWeatherData(lat, lon)
+                        ]);
+
+                        displayDashboard(locationName, weatherData);
+
+                    } catch (err) {
+                        showError("數據下載失敗: " + err.message);
+                    } finally {
+                        gpsBtn.disabled = false;
+                        gpsBtn.textContent = "重新掃描位置 (RE-SCAN)";
+                    }
+                },
+                (error) => {
+                    let msg = "定位訊號遺失";
+                    if (error.code === 1) msg = "使用者拒絕提供位置權限";
+                    showError(msg);
+                    gpsBtn.disabled = false;
+                }
+            );
         }
-    }
 
-    function displayWeather(locationData, timeSlot) {
-        const locationName = locationData.locationName;
-        const weatherElements = locationData.weatherElement;
-        const getEl = (name) => weatherElements.find(el => el.elementName === name);
+        // --- BigDataCloud API 取得位置名稱 ---
+        async function fetchLocationName(lat, lon) {
+            const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=zh`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error("Location Service Error");
+            const data = await res.json();
 
-        const wx = getEl('Wx').time;      
-        const pop = getEl('PoP').time;    
-        const minT = getEl('MinT').time;  
-        const maxT = getEl('MaxT').time;  
-        const ci = getEl('CI').time;      
+            // 組合地址名稱
+            let name = data.locality || data.city || data.principalSubdivision || "未知區域 (Unknown Area)";
 
-        let html = `<h2> ${locationName} 氣象報告</h2>`;
+            if (data.principalSubdivision && !name.includes(data.principalSubdivision)) {
+                name = `${data.principalSubdivision} ${name}`;
+            }
+            return name;
+        }
 
-        let slotsToDisplay = [0, 1, 2];
-        if (timeSlot !== 'all') slotsToDisplay = [parseInt(timeSlot)];
 
-        slotsToDisplay.forEach(i => {
-            if (!wx[i]) return;
-            const startTime = new Date(wx[i].startTime).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' });
-            const endTime = new Date(wx[i].endTime).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' });
-            
+        async function fetchWeatherData(lat, lon) {
+            // 天氣 API
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&current_weather=true&timezone=auto`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error("Weather Satellite Error");
+            return await res.json();
+        }
+
+        function displayDashboard(locationName, data) {
+            const current = data.current_weather;
+            const daily = data.daily;
+
+            // 參考天氣預報濕度給予描述
+            const wmoToText = (code) => {
+                const map = {
+                    0: "晴朗 (Clear)", 1: "大致晴朗 (Mainly Clear)", 2: "多雲 (Partly Cloudy)", 3: "陰天 (Overcast)",
+                    45: "霧 (Fog)", 48: "霧 (Fog)",
+                    51: "毛毛雨 (Drizzle)", 53: "毛毛雨", 55: "毛毛雨",
+                    61: "小雨 (Rain Slight)", 63: "中雨 (Rain Mod.)", 65: "大雨 (Rain Heavy)",
+                    80: "陣雨 (Showers)", 81: "陣雨", 82: "強陣雨",
+                    95: "雷雨 (Thunderstorm)", 96: "雷雨伴隨冰雹", 99: "大雷雨"
+                };
+                return map[code] || `未知代碼 (${code})`;
+            };
+
+            // 參考天氣預報天氣給予描述
+            const getComfort = (t) => {
+                if (t >= 30) return "酷熱 (Hot)";
+                if (t >= 26) return "悶熱 (Warm)";
+                if (t >= 20) return "舒適 (Comfortable)";
+                if (t >= 15) return "稍涼 (Cool)";
+                return "寒冷 (Cold)";
+            };
+
+            let html = `
+            <div class="location-badge">
+                偵測座標: ${locationName}
+            </div>
+            <h2>環境數據分析報告</h2>
+        `;
+
+            // 現在天氣區塊
             html += `
+            <div class="weather-card" style="border-color: #ffff00; box-shadow: 0 0 10px rgba(255,255,0,0.1);">
+                <h3 style="color: #ffff00; border-bottom-color: #666600;"> 即時現況 (LIVE)</h3>
+                <div class="weather-item">
+                    <span>天氣現象 (Wx)：</span>
+                    <strong style="font-size:1.2rem;">${wmoToText(current.weathercode)}</strong>
+                </div>
+                <div class="weather-item">
+                    <span>環境溫度 (Temp)：</span>
+                    <strong style="font-size:1.2rem;">${current.temperature}°C</strong>
+                </div>
+                <div class="weather-item">
+                    <span>體感評估 (Feel)：</span>
+                    <strong>${getComfort(current.temperature)}</strong>
+                </div>
+                <div class="weather-item">
+                    <span>風速流動 (Wind)：</span>
+                    <strong>${current.windspeed} km/h</strong>
+                </div>
+            </div>
+        `;
+
+            // 未來天氣區塊
+            html += `<h3> 未來預測 (FORECAST)</h3>`;
+            for (let i = 0; i < 3; i++) { // Show 3 days
+                const date = new Date(daily.time[i]).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' });
+                html += `
                 <div class="weather-card">
-                    <h3> T: ${startTime} -> ${endTime}</h3>
+                    <h3> ${date}</h3>
                     <div class="weather-item">
-                        <span>現象 (Phenomenon)：</span>
-                        <strong>${wx[i].parameter.parameterName}</strong>
+                        <span>預測天氣：</span>
+                        <strong>${wmoToText(daily.weathercode[i])}</strong>
                     </div>
                     <div class="weather-item">
-                        <span>溫度 (Temp)：</span>
-                        <strong>${minT[i].parameter.parameterName}°C - ${maxT[i].parameter.parameterName}°C</strong>
-                    </div>
-                     <div class="weather-item">
-                        <span>降雨率 (Precip)：</span>
-                        <strong>${pop[i].parameter.parameterName}%</strong>
+                        <span>氣溫範圍：</span>
+                        <strong>${daily.temperature_2m_min[i]}°C - ${daily.temperature_2m_max[i]}°C</strong>
                     </div>
                     <div class="weather-item">
-                        <span>舒適度 (Comfort)：</span>
-                        <span>${ci[i].parameter.parameterName}</span>
+                        <span>降雨機率：</span>
+                        <strong>${daily.precipitation_probability_max[i] || 0}%</strong>
                     </div>
                 </div>
             `;
-        });
-        resultDiv.innerHTML = html;
-    }
+            }
 
-    // --- 運勢 Logic (內容寫死) ---
-    function generateFortune() {
-        const zodiacIndex = parseInt(document.getElementById('zodiac').value);
-        const zodiacNames = ["牡羊", "金牛", "雙子", "巨蟹", "獅子", "處女", "天秤", "天蠍", "射手", "摩羯", "水瓶", "雙魚"];
-        const today = new Date();
-        
-        // Create a unique seed for the day + zodiac
-        // Format: YYYYMMDD + Index (e.g., 2023102705)
-        const dateStr = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-        const seed = dateStr + zodiacIndex;
+            resultDiv.innerHTML = html;
+        }
 
-        // Simple pseudo-random function based on seed
-        const random = (offset = 0) => {
-            let x = Math.sin(seed + offset) * 10000;
-            return x - Math.floor(x);
-        };
+        function showError(msg) {
+            resultDiv.innerHTML = `<div class="error"> SYSTEM ERROR: ${msg}</div>`;
+        }
 
-        const getScore = (offset) => Math.floor(random(offset) * 5) + 1; // 1 to 5
-        const pick = (arr, offset) => arr[Math.floor(random(offset) * arr.length)];
+        // --- 運勢 Logic ---
+        function generateFortune() {
+            const zodiacIndex = parseInt(document.getElementById('zodiac').value);
+            const zodiacNames = ["牡羊", "金牛", "雙子", "巨蟹", "獅子", "處女", "天秤", "天蠍", "射手", "摩羯", "水瓶", "雙魚"];
+            const today = new Date();
+            const dateStr = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+            const seed = dateStr + zodiacIndex;
+            const random = (offset = 0) => {
+                let x = Math.sin(seed + offset) * 10000;
+                return x - Math.floor(x);
+            };
+            const getScore = (offset) => Math.floor(random(offset) * 5) + 1;
+            const pick = (arr, offset) => arr[Math.floor(random(offset) * arr.length)];
+            const colors = ["矩陣綠", "錯誤紅", "深空黑", "乙太藍", "量子金", "光纖白", "警告橘", "虛擬紫"];
+            const numbers = [0, 1, 3, 5, 7, 8, 9, 11, 42, 101, 404, 500];
+            const advicePool = [
+                "系統運行穩定，適合執行重大決策。",
+                "防火牆偵測到潛在風險，請保守行事。",
+                "連結訊號強烈，適合社交與溝通。",
+                "記憶體佔用過高，請讓大腦適度休息。",
+                "發現未預期的 Bug，請小心處理細節。",
+                "雲端同步順利，你的想法會被看見。",
+                "今日適合重構生活模式。",
+                "不要忽略警告日誌，直覺是對的。",
+                "流量高峰期，請避免情緒過載。",
+                "加密金鑰已更新，安全感提升。"
+            ];
 
-        // Data
-        const colors = ["矩陣綠", "錯誤紅", "深空黑", "乙太藍", "量子金", "光纖白", "警告橘", "虛擬紫"];
-        const numbers = [0, 1, 3, 5, 7, 8, 9, 11, 42, 101];
-        const advicePool = [
-            "系統運行穩定，適合執行重大決策。",
-            "防火牆偵測到潛在風險，請保守行事。",
-            "連結訊號強烈，適合社交與溝通。",
-            "記憶體佔用過高，請讓大腦適度休息。",
-            "發現未預期的 Bug，請小心處理細節。",
-            "雲端同步順利，你的想法會被看見。",
-            "今日適合重構生活模式。",
-            "不要忽略警告日誌，直覺是對的。",
-            "流量高峰期，請避免情緒過載。",
-            "加密金鑰已更新，安全感提升。"
-        ];
+            const overall = getScore(1);
+            const love = getScore(2);
+            const work = getScore(3);
+            const money = getScore(4);
+            const luckyColor = pick(colors, 5);
+            const luckyNumber = pick(numbers, 6);
+            const advice = pick(advicePool, 7);
 
-        // 生成
-        const overall = getScore(1);
-        const love = getScore(2);
-        const work = getScore(3);
-        const money = getScore(4);
-        const luckyColor = pick(colors, 5);
-        const luckyNumber = pick(numbers, 6);
-        const advice = pick(advicePool, 7);
+            const renderStars = (n) => `<span class="stars">${'★'.repeat(n)}</span><span class="stars-empty">${'☆'.repeat(5 - n)}</span>`;
 
-        // 星數
-        const renderStars = (n) => {
-            const filled = `<span class="stars">${'★'.repeat(n)}</span>`;
-            const empty = `<span class="stars-empty">${'☆'.repeat(5-n)}</span>`;
-            return filled + empty;
-        };
+            fateBtn.disabled = true;
+            resultDiv.innerHTML = '<div class="loading">正在解析命運矩陣</div>';
 
-        fateBtn.disabled = true;
-        resultDiv.innerHTML = '<div class="loading">正在解析命運矩陣</div>';
-
-        setTimeout(() => { // 假Loading
-            let html = `<h2> ${zodiacNames[zodiacIndex]}座 今日運算</h2>`;
-            html += `
+            setTimeout(() => {
+                let html = `<h2> ${zodiacNames[zodiacIndex]}座 今日運算</h2>`;
+                html += `
                 <div class="weather-card">
                     <h3> Date: ${today.toLocaleDateString()}</h3>
-                    <div class="weather-item">
-                        <span>整體運勢 (Overall)：</span>
-                        <strong>${renderStars(overall)}</strong>
-                    </div>
-                    <div class="weather-item">
-                        <span>感情連結 (Love)：</span>
-                        <strong>${renderStars(love)}</strong>
-                    </div>
-                    <div class="weather-item">
-                        <span>工作效能 (Work)：</span>
-                        <strong>${renderStars(work)}</strong>
-                    </div>
-                    <div class="weather-item">
-                        <span>財富數據 (Money)：</span>
-                        <strong>${renderStars(money)}</strong>
-                    </div>
-                    <div class="weather-item">
-                        <span>幸運色 (Color)：</span>
-                        <strong>${luckyColor}</strong>
-                    </div>
-                    <div class="weather-item">
-                        <span>幸運數 (Number)：</span>
-                        <strong>${luckyNumber}</strong>
-                    </div>
+                    <div class="weather-item"><span>整體運勢：</span><strong>${renderStars(overall)}</strong></div>
+                    <div class="weather-item"><span>感情連結：</span><strong>${renderStars(love)}</strong></div>
+                    <div class="weather-item"><span>工作效能：</span><strong>${renderStars(work)}</strong></div>
+                    <div class="weather-item"><span>財富數據：</span><strong>${renderStars(money)}</strong></div>
+                    <div class="weather-item"><span>幸運色：</span><strong>${luckyColor}</strong></div>
+                    <div class="weather-item"><span>幸運數：</span><strong>${luckyNumber}</strong></div>
                     <div class="weather-item" style="border-top: 1px dashed #0f0; margin-top:10px; padding-top:10px;">
-                        <span>系統建議 (System Advice)：</span>
+                        <span>系統建議：</span>
                     </div>
-                    <div style="color: #0f0; margin-top:5px; font-weight:bold;">
-                        > ${advice}
-                    </div>
+                    <div style="color: #0f0; margin-top:5px; font-weight:bold;">> ${advice}</div>
                 </div>
             `;
-            resultDiv.innerHTML = html;
-            fateBtn.disabled = false;
-        }, 800);
-    }
-
-    function showError(msg) {
-        resultDiv.innerHTML = `<div class="error"> SYSTEM ERROR: ${msg}</div>`;
-    }
-</script>
+                resultDiv.innerHTML = html;
+                fateBtn.disabled = false;
+            }, 800);
+        }
+    </script>
 
 </body>
+
 </html>
